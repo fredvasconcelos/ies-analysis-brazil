@@ -1,6 +1,6 @@
 ---
 title: "Educational Institutions Evaluation in Brazil"
-author: "Fred"
+author: "Fred Vasconcelos"
 date: "`r Sys.Date()`"
 output: 
   rmdformats::readthedown:
@@ -32,9 +32,14 @@ library(ggplot2)
 
 We create a list of data frames for faster de creation of the data.
 
-```{r}
+```{r, echo=FALSE}
 file_paths <- fs::dir_ls("/home/fredvasconcelos/Documentos/educacao/alunos/2009_2021/")
 
+df_2021 <- read.csv('/home/fredvasconcelos/Documentos/educacao/alunos/2009_2021/cursos_2021.CSV', sep = ';', encoding = 'latin1')
+
+```
+
+```{r}
 listed_df <- file_paths %>%
   map(function (path) {
     read.csv(path, sep = ';', encoding = 'latin1')
@@ -47,5 +52,96 @@ listed_df <- file_paths %>%
 ```{r}
 df_cursos <- listed_df %>%
   unnest(cols = '.')
+```
+
+## View data frame structure
+
+```{r}
+head(df_cursos)
+```
+
+## Describe variables
+
+```{r}
+skimr::skim(df_cursos)
+```
+
+## Cleaning data frame
+
+```{r}
+df_cursos <- df_cursos %>%
+  janitor::clean_names() %>%
+  mutate_if(is.character, ~ str_to_lower(str_trim(abjutils::rm_accent(.)))) # concatenate for apply multiples functions
+```
+
+## Feature enginering
+
+The data frames don't have information about Regions and States of Brazil because. We get this information with the *IES CODE* in the **IES DATABASE**.
+
+```{r, echo=F}
+regions_states <- read.csv('/home/fredvasconcelos/Documentos/educacao/ies/ies_2021.CSV', sep = ';', encoding = 'latin1') %>%
+  select(CO_IES, NO_UF = NO_UF_IES, NO_REGIAO = NO_REGIAO_IES)
+```
+
+```{r}
+df_2021 <- df_2021 %>%
+  right_join(regions_states, by = c('CO_IES', 'NO_REGIAO', 'NO_UF'))
+```
+
+# Data analysis
+
+## Students profile
+
+Number of students admitted in Brazil is 3.945.091
+
+### Sex
+
+```{r}
+df_2021 %>%
+  janitor::clean_names() %>%
+  select(qt_ing_masc, qt_ing_fem) %>%
+  summarise_all(sum) %>%
+  gather('var', 'value', 1:2) %>%
+  ggplot(aes(x = factor(var, 
+                        labels = c('Female', 'Male')), 
+             y = value, 
+             fill = factor(var, 
+                        labels = c('Female', 'Male')))) +
+  geom_bar(stat = 'identity', position = 'dodge') +
+  ggthemes::scale_fill_ptol() +
+  ggthemes::theme_clean() +
+  guides(fill = F) +
+  xlab('Sex') +
+  scale_y_continuous(name = 'Number of students admitted', 
+                     labels = scales::label_number(suffix = " Mil", scale = 1e-3),
+                     breaks = seq(0,3000000, by = 500000)) +
+  ggtitle('Number of Students by sex')
+
+```
+
+### Sex - Regions
+
+```{r}
+df_2021 %>%
+  janitor::clean_names() %>%
+  select(no_regiao, qt_ing_masc, qt_ing_fem) %>%
+  group_by(no_regiao) %>%
+  summarise_all(sum) %>%
+  gather('var', 'value', 2:3) %>%
+  ggplot(aes(x = factor(var, 
+                        labels = c('Female', 'Male')), 
+             y = value, 
+             fill = factor(var, 
+                        labels = c('Female', 'Male')))) +
+  geom_bar(stat = 'identity', position = 'dodge') +
+  facet_wrap(~ no_regiao) +
+  ggthemes::scale_fill_ptol() +
+  ggthemes::theme_clean() +
+  guides(fill = F) +
+  xlab('Sex') +
+  scale_y_continuous(name = 'Number of students admitted', 
+                     labels = scales::label_number(suffix = " Mil", scale = 1e-3),
+                     breaks = seq(0,1000000, by = 200000)) +
+  ggtitle('Number of students by sex per Region')
 ```
 
