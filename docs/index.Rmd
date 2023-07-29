@@ -431,7 +431,8 @@ cluster_regiao_sex <- scale(cluster_regiao_sex[,2:3])
 rownames(cluster_regiao_sex) <- names_cluster_regiao_sex
 
 fviz_cluster(kmeans(cluster_regiao_sex, 3, nstart = 25), cluster_regiao_sex[,1:2], ellipse.type = "norm", 
-             repel = T, ggtheme = ggthemes::theme_clean(), palette = c('#4477AA', '#CC6677', '#117733'))
+             repel = T, ggtheme = ggthemes::theme_clean(), palette = c('#4477AA', '#CC6677', '#117733'),
+             main = 'Grouping by Regions and Sex')
 
 ```
 
@@ -452,7 +453,8 @@ cluster_uf_sex <- scale(cluster_uf_sex[,2:3])
 rownames(cluster_uf_sex) <- names_cluster_uf_sex
 
 fviz_cluster(kmeans(cluster_uf_sex, 5, nstart = 25), cluster_uf_sex, ellipse.type = "norm", 
-             repel = T, ggtheme = ggthemes::theme_clean(), palette = c('#4477AA', '#CC6677', '#117733', '#DDCC77', '#AA4499'))
+             repel = T, ggtheme = ggthemes::theme_clean(), palette = c('#4477AA', '#CC6677', '#117733', '#DDCC77', '#AA4499'),
+             main = 'Grouping by States and Sex')
 
 ```
 
@@ -478,7 +480,8 @@ cluster_regiao_ethnic <- scale(cluster_regiao_ethnic[,2:6])
 rownames(cluster_regiao_ethnic) <- names_cluster_regiao_ethnic
 
 fviz_cluster(kmeans(cluster_regiao_ethnic, 3, nstart = 25), cluster_regiao_ethnic, ellipse.type = "norm", 
-             repel = T, ggtheme = ggthemes::theme_clean(), palette = c('#4477AA', '#CC6677', '#117733'))
+             repel = T, ggtheme = ggthemes::theme_clean(), palette = c('#4477AA', '#CC6677', '#117733'),
+             main = 'Grouping by Regions and Ethnic group')
 
 ```
 
@@ -504,7 +507,8 @@ cluster_uf_ethnic <- scale(cluster_uf_ethnic[,2:6])
 rownames(cluster_uf_ethnic) <- names_cluster_uf_ethnic
 
 fviz_cluster(kmeans(cluster_uf_ethnic, 5, nstart = 25), cluster_uf_ethnic, ellipse.type = "norm", 
-             repel = T, ggtheme = ggthemes::theme_clean(), palette = c('#4477AA', '#CC6677', '#117733', '#DDCC77', '#AA4499'))
+             repel = T, ggtheme = ggthemes::theme_clean(), palette = c('#4477AA', '#CC6677', '#117733', '#DDCC77', '#AA4499'),
+             main = 'Grouping by States and Ethnic group')
 
 ```
 
