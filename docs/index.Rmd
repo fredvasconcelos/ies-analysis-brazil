@@ -333,8 +333,7 @@ stats_df <- students %>%
   ungroup()
 ```
 
-
-```{r}
+```{r, echo=F}
 labels_table_model <- c(`(Intercept)` = 'Intercept',
                         `as.factor(var)qt_ing_fem` = 'Sex (Female)',
                         `as.factor(var)qt_ing_masc` = 'Sex (Male)',
@@ -405,15 +404,14 @@ labels_table_model <- c(`(Intercept)` = 'Intercept',
                         )
 ```
 
-
 ```{r}
 stats_df %>%
   mutate(value = ifelse(value == 0, 1, value)) %>%
   lm(log(value) ~ as.factor(var) + data + as.factor(no_regiao) + as.factor(no_uf), data = .) %>%
   sjPlot::tab_model(show.ci = F, show.est = T, show.se = T, show.r2 = T, show.stat = T,
-                    pred.labels = labels_table_model)
+                    pred.labels = labels_table_model,
+                    dv.labels = 'Relationship between number of students admitted')
 ```
-
 
 ## Cluster Analysis
 
@@ -444,7 +442,8 @@ cluster_uf_sex <- stats_df %>%
   pivot_wider(names_from = var, values_from = value) %>%
   group_by(no_uf) %>%
   summarise_if(is.numeric, sum) %>%
-  select(no_uf, Male = qt_ing_masc, Female = qt_ing_fem)
+  select(no_uf, Male = qt_ing_masc, Female = qt_ing_fem) %>%
+  ungroup()
 
 names_cluster_uf_sex <- cluster_uf_sex$no_uf
 
@@ -452,8 +451,60 @@ cluster_uf_sex <- scale(cluster_uf_sex[,2:3])
 
 rownames(cluster_uf_sex) <- names_cluster_uf_sex
 
-fviz_cluster(kmeans(cluster_uf_sex, 5, nstart = 25), cluster_uf_sex[,1:2], ellipse.type = "norm", 
-             repel = T, ggtheme = ggthemes::theme_clean(), palette = c('#4477AA', '#CC6677', '#117733', '#DDCC77'))
+fviz_cluster(kmeans(cluster_uf_sex, 5, nstart = 25), cluster_uf_sex, ellipse.type = "norm", 
+             repel = T, ggtheme = ggthemes::theme_clean(), palette = c('#4477AA', '#CC6677', '#117733', '#DDCC77', '#AA4499'))
+
+```
+
+### Region and Ethnic group
+
+```{r}
+cluster_regiao_ethnic <- stats_df %>%
+  pivot_wider(names_from = var, values_from = value) %>%
+  group_by(no_regiao) %>%
+  summarise_if(is.numeric, sum) %>%
+  select(no_regiao, 
+         White = qt_ing_branca, 
+         Black = qt_ing_preta,
+         Brown = qt_ing_parda,
+         Asian = qt_ing_amarela,
+         Not_declared = qt_ing_cornd) %>%
+  ungroup()
+
+names_cluster_regiao_ethnic <- cluster_regiao_ethnic$no_regiao
+
+cluster_regiao_ethnic <- scale(cluster_regiao_ethnic[,2:6])
+
+rownames(cluster_regiao_ethnic) <- names_cluster_regiao_ethnic
+
+fviz_cluster(kmeans(cluster_regiao_ethnic, 3, nstart = 25), cluster_regiao_ethnic, ellipse.type = "norm", 
+             repel = T, ggtheme = ggthemes::theme_clean(), palette = c('#4477AA', '#CC6677', '#117733'))
+
+```
+
+### States and ethnic group
+
+```{r}
+cluster_uf_ethnic <- stats_df %>%
+  pivot_wider(names_from = var, values_from = value) %>%
+  group_by(no_uf) %>%
+  summarise_if(is.numeric, sum) %>%
+  select(no_uf, 
+         White = qt_ing_branca, 
+         Black = qt_ing_preta,
+         Brown = qt_ing_parda,
+         Asian = qt_ing_amarela,
+         Not_declared = qt_ing_cornd) %>%
+  ungroup()
+
+names_cluster_uf_ethnic <- cluster_uf_ethnic$no_uf
+
+cluster_uf_ethnic <- scale(cluster_uf_ethnic[,2:6])
+
+rownames(cluster_uf_ethnic) <- names_cluster_uf_ethnic
+
+fviz_cluster(kmeans(cluster_uf_ethnic, 5, nstart = 25), cluster_uf_ethnic, ellipse.type = "norm", 
+             repel = T, ggtheme = ggthemes::theme_clean(), palette = c('#4477AA', '#CC6677', '#117733', '#DDCC77', '#AA4499'))
 
 ```
 
