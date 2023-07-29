@@ -174,28 +174,6 @@ students %>%
   ggtitle('Number of Students by sex and States')
 ```
 
-### Statistical tests
-
-```{r}
-students %>%
-  mutate(data = zoo::as.yearmon(nu_ano_censo)) %>%
-  group_by(data) %>%
-  summarise_at(c('qt_ing_fem', 'qt_ing_masc'), sum) %>%
-  gather('var', 'value', 2:3) %>%
-  lm(data = ., value ~ data + var) %>%
-  performance::check_model()
-```
-
-```{r}
-students %>%
-  mutate(data = zoo::as.yearmon(nu_ano_censo)) %>%
-  group_by(data) %>%
-  summarise_at(c('qt_ing_fem', 'qt_ing_masc'), sum) %>%
-  gather('var', 'value', 2:3) %>%
-  lm(data = ., value ~ data + var) %>%
-  performance::model_performance() 
-```
-
 ### Students by ethnic group - Brazil
 
 We use the IBGE's ethnicity classification. Link: <https://educa.ibge.gov.br/jovens/conheca-o-brasil/populacao/18319-cor-ou-raca.html>
@@ -299,24 +277,26 @@ students %>%
   ggtitle('Number of Students by age')
 ```
 
-
-
-
 ### Students by ethnic group - Regions
 
 ```{r}
 students %>%
   mutate(data = zoo::as.yearmon(nu_ano_censo)) %>%
   group_by(data, no_regiao) %>%
-  summarise_at(c('qt_ing_branca', 'qt_ing_preta', 'qt_ing_indigena',
-                 'qt_ing_parda', 'qt_ing_amarela', 'qt_ing_cornd'), sum) %>%
-  gather('var', 'value', 3:8) %>%
-  mutate(var = case_when(var == 'qt_ing_branca' ~ 'White',
-                         var == 'qt_ing_preta' ~ 'Black',
-                         var == 'qt_ing_indigena' ~ 'Indigenous',
-                         var == 'qt_ing_parda' ~ 'Brown', 
-                         var == 'qt_ing_amarela' ~ 'Asian', 
-                         var == 'qt_ing_cornd' ~ 'Not\nDefined')) %>%
+  summarise_at(c("qt_ing_0_17", "qt_ing_18_24", "qt_ing_25_29", "qt_ing_30_34",
+                 "qt_ing_35_39", "qt_ing_40_49", "qt_ing_50_59", "qt_ing_60_mais"), sum) %>%
+  gather('var', 'value', 3:10) %>%
+  mutate(var = case_when(var == 'qt_ing_0_17' ~ '<18',
+                         var == 'qt_ing_18_24' ~ '18~24',
+                         var == 'qt_ing_25_29' ~ '25~29',
+                         var == 'qt_ing_30_34' ~ '30~34', 
+                         var == 'qt_ing_35_39' ~ '35~39', 
+                         var == 'qt_ing_40_49' ~ '40~49',
+                         var == 'qt_ing_50_59' ~ '50~59',
+                         var == 'qt_ing_60_mais' ~ '>60'),
+         var = fct_relevel(as.factor(var), '<18', '18~24', '25~29',
+                           '30~34', '35~39', '40~49', 
+                           '50~59', '>60')) %>%
   ggplot(aes(x = data, 
              y = value,
              linetype = var,
@@ -331,6 +311,76 @@ students %>%
   xlab('') +
   scale_y_continuous(name = 'Number of students admitted', 
                      labels = scales::label_number(suffix = "K", scale = 1e-3, big.mark = '.')) +
-  ggtitle('Number of Students by ethnic group and Region')
+  ggtitle('Number of Students by age')
 ```
+
+## Statistical Analysis
+
+### What explain the growth of students admmited around the years?
+
+```{r}
+stats_df <- students %>%
+  mutate(data = zoo::as.yearmon(nu_ano_censo)) %>%
+  group_by(data, no_regiao, no_uf) %>%
+  summarise_if(is.numeric, sum) %>%
+  ungroup() %>%
+  select(data, no_regiao, no_uf, qt_ing_fem:qt_ing_noturno, qt_ing_0_17:qt_ing_cornd, qt_ing_financ:qt_ing_apoio_social) %>%
+  gather('var', 'value', 4:42) %>%
+  group_by(data, no_regiao, no_uf, var) %>%
+  summarise_if(is.numeric, sum) %>%
+  ungroup()
+```
+
+
+```{r}
+t %>%
+  mutate(value = ifelse(value == 0, 1, value)) %>%
+  lm(log(value) ~ as.factor(var) + data + as.factor(no_regiao) + as.factor(no_uf), data = .) %>%
+  sjPlot::tab_model(show.ci = F, show.df = T, show.est = T, show.se = T, show.r2 = T, show.stat = T)
+```
+
+
+## Cluster Analysis
+
+### Region and Sex
+
+```{r}
+cluster_regiao_sex <- stats_df %>%
+  pivot_wider(names_from = var, values_from = value) %>%
+  group_by(no_regiao) %>%
+  summarise_if(is.numeric, sum) %>%
+  select(no_regiao, Male = qt_ing_masc, Female = qt_ing_fem)
+
+names_cluster_regiao_sex <- cluster_regiao_sex$no_regiao
+
+cluster_regiao_sex <- scale(cluster_regiao_sex[,2:3])
+
+rownames(cluster_regiao_sex) <- names_cluster_regiao_sex
+
+fviz_cluster(kmeans(cluster_regiao_sex, 3, nstart = 25), cluster_regiao_sex[,1:2], ellipse.type = "norm", 
+             repel = T, ggtheme = ggthemes::theme_clean(), palette = c('#4477AA', '#CC6677', '#117733'))
+
+```
+
+### States and Sex
+
+```{r}
+cluster_uf_sex <- stats_df %>%
+  pivot_wider(names_from = var, values_from = value) %>%
+  group_by(no_uf) %>%
+  summarise_if(is.numeric, sum) %>%
+  select(no_uf, Male = qt_ing_masc, Female = qt_ing_fem)
+
+names_cluster_uf_sex <- cluster_uf_sex$no_uf
+
+cluster_uf_sex <- scale(cluster_uf_sex[,2:3])
+
+rownames(cluster_uf_sex) <- names_cluster_uf_sex
+
+fviz_cluster(kmeans(cluster_uf_sex, 5, nstart = 25), cluster_uf_sex[,1:2], ellipse.type = "norm", 
+             repel = T, ggtheme = ggthemes::theme_clean(), palette = c('#4477AA', '#CC6677', '#117733', '#DDCC77'))
+
+```
+
+
 
