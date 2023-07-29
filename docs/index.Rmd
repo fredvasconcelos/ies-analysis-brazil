@@ -27,6 +27,8 @@ library(rstatix)
 library(ggplot2)
 library(factoextra)
 library(ggrepel)
+library(cluster)
+library(ggthemes)
 ```
 
 ## Load data
@@ -429,9 +431,18 @@ names_cluster_regiao_sex <- cluster_regiao_sex$no_regiao
 cluster_regiao_sex <- scale(cluster_regiao_sex[,2:3])
 
 rownames(cluster_regiao_sex) <- names_cluster_regiao_sex
+```
 
-fviz_cluster(kmeans(cluster_regiao_sex, 3, nstart = 25), cluster_regiao_sex[,1:2], ellipse.type = "norm", 
-             repel = T, ggtheme = ggthemes::theme_clean(), palette = c('#4477AA', '#CC6677', '#117733'),
+> Determine numbers of clusters  with 1000 boostraping Monte-Carlo's method. **The highest GAP value determines the number of clusters
+
+```{r}
+clusGap(cluster_regiao_sex, FUN = kmeans, K.max = 4, B = 1000)
+```
+
+
+```{r}
+fviz_cluster(kmeans(cluster_regiao_sex, 4, nstart = 25), cluster_regiao_sex[,1:2], ellipse.type = "norm", 
+             repel = T, ggtheme = ggthemes::theme_clean(), palette = c('#4477AA', '#CC6677', '#117733', '#AA4499'),
              main = 'Grouping by Regions and Sex')
 
 ```
@@ -451,9 +462,16 @@ names_cluster_uf_sex <- cluster_uf_sex$no_uf
 cluster_uf_sex <- scale(cluster_uf_sex[,2:3])
 
 rownames(cluster_uf_sex) <- names_cluster_uf_sex
+```
 
-fviz_cluster(kmeans(cluster_uf_sex, 5, nstart = 25), cluster_uf_sex, ellipse.type = "norm", 
-             repel = T, ggtheme = ggthemes::theme_clean(), palette = c('#4477AA', '#CC6677', '#117733', '#DDCC77', '#AA4499'),
+```{r}
+clusGap(cluster_uf_sex, FUN = kmeans, K.max = 10, B = 1000)
+```
+
+
+```{r}
+fviz_cluster(kmeans(cluster_uf_sex, 7, nstart = 25), cluster_uf_sex, ellipse.type = "norm", 
+             repel = T, ggtheme = ggthemes::theme_clean(), palette = c('#4477AA', '#CC6677', '#117733', '#DDCC77', '#AA4499', '#661100', '#44AA99'),
              main = 'Grouping by States and Sex')
 
 ```
@@ -478,16 +496,22 @@ names_cluster_regiao_ethnic <- cluster_regiao_ethnic$no_regiao
 cluster_regiao_ethnic <- scale(cluster_regiao_ethnic[,2:6])
 
 rownames(cluster_regiao_ethnic) <- names_cluster_regiao_ethnic
+```
 
-fviz_cluster(kmeans(cluster_regiao_ethnic, 3, nstart = 25), cluster_regiao_ethnic, ellipse.type = "norm", 
-             repel = T, ggtheme = ggthemes::theme_clean(), palette = c('#4477AA', '#CC6677', '#117733'),
+```{r}
+clusGap(cluster_regiao_ethnic, FUN = kmeans, K.max = 4, B = 1000)
+```
+
+```{r}
+fviz_cluster(kmeans(cluster_regiao_ethnic, 4, nstart = 25), cluster_regiao_ethnic, ellipse.type = "norm", 
+             repel = T, ggtheme = ggthemes::theme_clean(), palette = c('#4477AA', '#CC6677', '#117733', '#AA4499'),
              main = 'Grouping by Regions and Ethnic group')
 
 ```
 
 ### States and ethnic group
 
-```{r}
+````{r}
 cluster_uf_ethnic <- stats_df %>%
   pivot_wider(names_from = var, values_from = value) %>%
   group_by(no_uf) %>%
@@ -505,12 +529,16 @@ names_cluster_uf_ethnic <- cluster_uf_ethnic$no_uf
 cluster_uf_ethnic <- scale(cluster_uf_ethnic[,2:6])
 
 rownames(cluster_uf_ethnic) <- names_cluster_uf_ethnic
+```
 
-fviz_cluster(kmeans(cluster_uf_ethnic, 5, nstart = 25), cluster_uf_ethnic, ellipse.type = "norm", 
-             repel = T, ggtheme = ggthemes::theme_clean(), palette = c('#4477AA', '#CC6677', '#117733', '#DDCC77', '#AA4499'),
+```{r}
+clusGap(cluster_uf_ethnic, FUN = kmeans, K.max = 10, B = 1000)
+```
+
+````{r}
+fviz_cluster(kmeans(cluster_uf_ethnic, 9, nstart = 25), cluster_uf_ethnic, ellipse.type = "norm", 
+             repel = T, ggtheme = ggthemes::theme_clean(), palette = c('#4477AA', '#CC6677', '#117733', '#DDCC77', '#AA4499', '#661100', '#44AA99', '#332288', '#AA4466'),
              main = 'Grouping by States and Ethnic group')
 
 ```
-
-
 
